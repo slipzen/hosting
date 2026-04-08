@@ -1,0 +1,461 @@
+
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: var(--font-sans); }
+
+  .app { max-width: 480px; margin: 0 auto; padding: 0 0 80px; }
+
+  .header { padding: 20px 16px 12px; border-bottom: 0.5px solid var(--color-border-tertiary); position: sticky; top: 0; background: var(--color-background-primary); z-index: 10; }
+  .header h1 { font-size: 22px; font-weight: 500; color: var(--color-text-primary); margin-bottom: 4px; }
+  .header p { font-size: 13px; color: var(--color-text-secondary); }
+
+  .tabs { display: flex; gap: 0; border-bottom: 0.5px solid var(--color-border-tertiary); background: var(--color-background-primary); position: sticky; top: 73px; z-index: 9; overflow-x: auto; }
+  .tab { flex: 1; padding: 10px 8px; font-size: 13px; font-weight: 400; color: var(--color-text-secondary); background: none; border: none; border-bottom: 2px solid transparent; cursor: pointer; white-space: nowrap; transition: all 0.15s; }
+  .tab.active { color: var(--color-text-primary); border-bottom-color: var(--color-text-primary); font-weight: 500; }
+
+  .section { padding: 16px; }
+
+  .add-bar { display: flex; gap: 8px; margin-bottom: 16px; }
+  .add-bar input { flex: 1; padding: 10px 12px; border: 0.5px solid var(--color-border-tertiary); border-radius: var(--border-radius-md); font-size: 14px; background: var(--color-background-secondary); color: var(--color-text-primary); }
+  .add-bar input:focus { outline: none; border-color: var(--color-border-primary); }
+  .add-bar button { padding: 10px 14px; border: 0.5px solid var(--color-border-secondary); border-radius: var(--border-radius-md); background: var(--color-background-primary); color: var(--color-text-primary); font-size: 14px; cursor: pointer; white-space: nowrap; }
+  .add-bar button:active { transform: scale(0.97); }
+
+  .loading-bar { text-align: center; padding: 12px; font-size: 13px; color: var(--color-text-secondary); display: none; }
+
+  .filter-row { display: flex; gap: 8px; margin-bottom: 12px; overflow-x: auto; padding-bottom: 4px; }
+  .filter-chip { padding: 5px 12px; border: 0.5px solid var(--color-border-tertiary); border-radius: 20px; font-size: 12px; background: var(--color-background-primary); color: var(--color-text-secondary); cursor: pointer; white-space: nowrap; flex-shrink: 0; }
+  .filter-chip.active { background: var(--color-text-primary); color: var(--color-background-primary); border-color: var(--color-text-primary); }
+
+  .card { background: var(--color-background-primary); border: 0.5px solid var(--color-border-tertiary); border-radius: var(--border-radius-lg); padding: 14px; margin-bottom: 12px; }
+  .card-top { display: flex; align-items: flex-start; gap: 12px; }
+  .card-poster { width: 52px; height: 72px; border-radius: var(--border-radius-md); background: var(--color-background-secondary); border: 0.5px solid var(--color-border-tertiary); display: flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0; overflow: hidden; }
+  .card-poster img { width: 100%; height: 100%; object-fit: cover; border-radius: var(--border-radius-md); }
+  .card-info { flex: 1; min-width: 0; }
+  .card-title { font-size: 15px; font-weight: 500; color: var(--color-text-primary); margin-bottom: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .card-meta { font-size: 12px; color: var(--color-text-secondary); margin-bottom: 6px; }
+  .card-actions { display: flex; gap: 6px; align-items: center; margin-top: 2px; }
+  .badge { padding: 3px 8px; border-radius: 20px; font-size: 11px; font-weight: 400; }
+  .badge-type { background: var(--color-background-secondary); color: var(--color-text-secondary); border: 0.5px solid var(--color-border-tertiary); }
+  .badge-watching { background: #E1F5EE; color: #0F6E56; }
+  .badge-want { background: #E6F1FB; color: #185FA5; }
+  .badge-done { background: #EAF3DE; color: #3B6D11; }
+  @media (prefers-color-scheme: dark) {
+    .badge-watching { background: #085041; color: #9FE1CB; }
+    .badge-want { background: #0C447C; color: #B5D4F4; }
+    .badge-done { background: #27500A; color: #C0DD97; }
+  }
+
+  .imdb-link { font-size: 11px; color: #E6B400; font-weight: 500; text-decoration: none; }
+  .imdb-link:hover { text-decoration: underline; }
+
+  .stream-row { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
+  .stream-badge { padding: 3px 8px; border-radius: 20px; font-size: 11px; font-weight: 400; border: 0.5px solid var(--color-border-tertiary); color: var(--color-text-secondary); background: var(--color-background-secondary); }
+
+  .progress-section { margin-top: 10px; padding-top: 10px; border-top: 0.5px solid var(--color-border-tertiary); display: none; }
+  .progress-section.visible { display: block; }
+  .progress-label { font-size: 12px; color: var(--color-text-secondary); margin-bottom: 8px; }
+  .ep-row { display: flex; gap: 8px; align-items: center; }
+  .ep-row label { font-size: 12px; color: var(--color-text-secondary); }
+  .ep-row input { width: 52px; padding: 5px 8px; border: 0.5px solid var(--color-border-tertiary); border-radius: var(--border-radius-md); font-size: 13px; text-align: center; background: var(--color-background-secondary); color: var(--color-text-primary); }
+
+  .card-menu-row { display: flex; gap: 8px; margin-top: 10px; padding-top: 10px; border-top: 0.5px solid var(--color-border-tertiary); }
+  .card-btn { flex: 1; padding: 7px 4px; border: 0.5px solid var(--color-border-tertiary); border-radius: var(--border-radius-md); font-size: 11px; color: var(--color-text-secondary); background: var(--color-background-secondary); cursor: pointer; text-align: center; }
+  .card-btn:hover { border-color: var(--color-border-secondary); color: var(--color-text-primary); }
+  .card-btn.danger { color: #A32D2D; }
+
+  .empty { text-align: center; padding: 40px 20px; color: var(--color-text-secondary); font-size: 14px; }
+  .empty-icon { font-size: 36px; margin-bottom: 12px; }
+
+  .modal-bg { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 100; align-items: flex-end; }
+  .modal-bg.open { display: flex; }
+  .modal { background: var(--color-background-primary); border-radius: var(--border-radius-lg) var(--border-radius-lg) 0 0; padding: 20px 16px 32px; width: 100%; max-height: 80vh; overflow-y: auto; }
+  .modal h2 { font-size: 18px; font-weight: 500; margin-bottom: 16px; }
+  .modal-close { float: right; background: none; border: none; font-size: 20px; cursor: pointer; color: var(--color-text-secondary); margin-top: -2px; }
+
+  .status-btns { display: flex; gap: 8px; margin-bottom: 16px; }
+  .status-btn { flex: 1; padding: 9px; border: 0.5px solid var(--color-border-tertiary); border-radius: var(--border-radius-md); font-size: 13px; cursor: pointer; background: var(--color-background-secondary); color: var(--color-text-secondary); }
+  .status-btn.sel { background: var(--color-text-primary); color: var(--color-background-primary); border-color: var(--color-text-primary); }
+
+  .note-area textarea { width: 100%; padding: 10px 12px; border: 0.5px solid var(--color-border-tertiary); border-radius: var(--border-radius-md); font-size: 13px; background: var(--color-background-secondary); color: var(--color-text-primary); resize: vertical; min-height: 80px; font-family: var(--font-sans); }
+  .note-area label { font-size: 12px; color: var(--color-text-secondary); display: block; margin-bottom: 6px; }
+  .save-btn { width: 100%; padding: 11px; border: 0.5px solid var(--color-border-secondary); border-radius: var(--border-radius-md); font-size: 14px; font-weight: 500; cursor: pointer; background: var(--color-text-primary); color: var(--color-background-primary); margin-top: 14px; }
+  .save-btn:active { transform: scale(0.98); }
+
+  .rating-row { display: flex; gap: 6px; margin-bottom: 16px; }
+  .star { font-size: 20px; cursor: pointer; color: var(--color-border-secondary); }
+  .star.lit { color: #E6B400; }
+
+  .ai-result { background: var(--color-background-secondary); border-radius: var(--border-radius-md); padding: 12px; font-size: 13px; color: var(--color-text-secondary); margin-bottom: 12px; line-height: 1.5; }
+</style>
+
+<div class="app">
+  <div class="header">
+    <h1>Streamkollen</h1>
+    <p>Håll koll på vad ni vill se</p>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('watchlist')">Att se</button>
+    <button class="tab" onclick="switchTab('patrik')">Patrik</button>
+    <button class="tab" onclick="switchTab('matilda')">Matilda</button>
+    <button class="tab" onclick="switchTab('done')">Sett</button>
+  </div>
+
+  <div class="section" id="tab-watchlist">
+    <div class="add-bar">
+      <input type="text" id="search-input" placeholder="Sök film eller serie..." onkeydown="if(event.key==='Enter')addItem()">
+      <button onclick="addItem()">+ Lägg till</button>
+    </div>
+    <div class="loading-bar" id="loading-bar">Söker info via AI...</div>
+    <div class="filter-row">
+      <button class="filter-chip active" onclick="setFilter(this,'all')">Alla</button>
+      <button class="filter-chip" onclick="setFilter(this,'movie')">Filmer</button>
+      <button class="filter-chip" onclick="setFilter(this,'series')">Serier</button>
+      <button class="filter-chip" onclick="setFilter(this,'watching')">Pågående</button>
+    </div>
+    <div id="list-watchlist"></div>
+  </div>
+
+  <div class="section" id="tab-patrik" style="display:none">
+    <div class="add-bar">
+      <input type="text" id="patrik-input" placeholder="Patrik föreslår..." onkeydown="if(event.key==='Enter')addItem('patrik')">
+      <button onclick="addItem('patrik')">+ Lägg till</button>
+    </div>
+    <div class="loading-bar" id="loading-bar-patrik">Söker info via AI...</div>
+    <div id="list-patrik"></div>
+  </div>
+
+  <div class="section" id="tab-matilda" style="display:none">
+    <div class="add-bar">
+      <input type="text" id="matilda-input" placeholder="Matilda föreslår..." onkeydown="if(event.key==='Enter')addItem('matilda')">
+      <button onclick="addItem('matilda')">+ Lägg till</button>
+    </div>
+    <div class="loading-bar" id="loading-bar-matilda">Söker info via AI...</div>
+    <div id="list-matilda"></div>
+  </div>
+
+  <div class="section" id="tab-done" style="display:none">
+    <div id="list-done"></div>
+  </div>
+</div>
+
+<div class="modal-bg" id="modal-bg">
+  <div class="modal" id="modal-content"></div>
+</div>
+
+<script>
+const CLAUDE_MODEL = "claude-sonnet-4-20250514";
+
+let data = {
+  watchlist: [],
+  patrik: [],
+  matilda: [],
+  done: []
+};
+
+let currentFilter = 'all';
+let currentTab = 'watchlist';
+let editingItem = null;
+let editingList = null;
+
+function load() {
+  try {
+    const saved = localStorage.getItem('streamkollen_v2');
+    if (saved) data = JSON.parse(saved);
+  } catch(e) {}
+}
+
+function save() {
+  try { localStorage.setItem('streamkollen_v2', JSON.stringify(data)); } catch(e) {}
+}
+
+load();
+render();
+
+async function fetchMediaInfo(title) {
+  const prompt = `Du är en assistent som hjälper användare att hitta info om filmer och TV-serier.
+Svara ENBART med ett JSON-objekt, inga backticks, inget annat.
+
+Titeln är: "${title}"
+
+Returnera detta JSON-format:
+{
+  "title": "officiell titel",
+  "year": "utgivningsår",
+  "type": "movie" eller "series",
+  "genre": "genre",
+  "description": "kort beskrivning på svenska, max 1 mening",
+  "imdb_id": "imdb-id ex tt1234567 eller null om okänt",
+  "streaming": ["Netflix","Disney+","HBO Max","Amazon Prime","Apple TV+","SVT Play","TV4 Play","Viaplay","C More","SkyShowtime"],
+  "poster_emoji": "ett relevant emoji"
+}
+
+Fyll i streaming med de tjänster där verket faktiskt finns tillgängligt i Sverige just nu (max 4, tom lista om okänt).`;
+
+  const resp = await fetch("https://api.anthropic.com/v1/messages", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      model: CLAUDE_MODEL,
+      max_tokens: 1000,
+      messages: [{ role: "user", content: prompt }]
+    })
+  });
+  const d = await resp.json();
+  const text = d.content?.map(c => c.text || "").join("") || "{}";
+  const clean = text.replace(/```json|```/g, "").trim();
+  return JSON.parse(clean);
+}
+
+async function addItem(listKey) {
+  listKey = listKey || currentTab;
+  if (listKey === 'done') return;
+  const inputId = listKey === 'watchlist' ? 'search-input' : listKey + '-input';
+  const inp = document.getElementById(inputId);
+  const title = inp.value.trim();
+  if (!title) return;
+  inp.value = '';
+
+  const loaderId = listKey === 'watchlist' ? 'loading-bar' : 'loading-bar-' + listKey;
+  const loader = document.getElementById(loaderId);
+  loader.style.display = 'block';
+
+  let info;
+  try {
+    info = await fetchMediaInfo(title);
+  } catch(e) {
+    info = { title: title, type: 'movie', poster_emoji: '🎬', streaming: [], description: '' };
+  }
+
+  loader.style.display = 'none';
+
+  const item = {
+    id: Date.now(),
+    title: info.title || title,
+    year: info.year || '',
+    type: info.type || 'movie',
+    genre: info.genre || '',
+    description: info.description || '',
+    imdb_id: info.imdb_id || null,
+    streaming: info.streaming || [],
+    poster_emoji: info.poster_emoji || '🎬',
+    status: 'want',
+    season: 1,
+    episode: 1,
+    rating: 0,
+    note: '',
+    addedDate: new Date().toLocaleDateString('sv-SE')
+  };
+
+  data[listKey].unshift(item);
+  save();
+  render();
+}
+
+function render() {
+  renderList('watchlist');
+  renderList('patrik');
+  renderList('matilda');
+  renderList('done');
+}
+
+function renderList(key) {
+  const el = document.getElementById('list-' + key);
+  if (!el) return;
+  let items = data[key];
+
+  if (key === 'watchlist' && currentFilter !== 'all') {
+    if (currentFilter === 'movie') items = items.filter(i => i.type === 'movie');
+    else if (currentFilter === 'series') items = items.filter(i => i.type === 'series');
+    else if (currentFilter === 'watching') items = items.filter(i => i.status === 'watching');
+  }
+
+  if (items.length === 0) {
+    const msgs = {
+      watchlist: ['🎬', 'Inga titlar ännu', 'Sök efter en film eller serie ovan'],
+      patrik: ['🍿', 'Inga förslag från Patrik', 'Lägg till något du vill titta på!'],
+      matilda: ['✨', 'Inga förslag från Matilda', 'Lägg till något du vill titta på!'],
+      done: ['✅', 'Inget sett ännu', 'Markera titlar som sedda för att de ska hamna här']
+    };
+    const m = msgs[key] || ['📋','Tomt',''];
+    el.innerHTML = `<div class="empty"><div class="empty-icon">${m[0]}</div><strong>${m[1]}</strong><br><span style="font-size:12px;color:var(--color-text-secondary)">${m[2]}</span></div>`;
+    return;
+  }
+
+  el.innerHTML = items.map(item => renderCard(item, key)).join('');
+}
+
+function renderCard(item, listKey) {
+  const imdbHtml = item.imdb_id
+    ? `<a class="imdb-link" href="https://www.imdb.com/title/${item.imdb_id}/" target="_blank">IMDb</a>`
+    : `<span style="font-size:11px;color:var(--color-text-secondary)">IMDb okänt</span>`;
+
+  const statusBadge = item.status === 'watching'
+    ? `<span class="badge badge-watching">Tittar</span>`
+    : item.status === 'done'
+    ? `<span class="badge badge-done">Sett</span>`
+    : `<span class="badge badge-want">Vill se</span>`;
+
+  const streamHtml = item.streaming && item.streaming.length
+    ? item.streaming.map(s => `<span class="stream-badge">${s}</span>`).join('')
+    : '<span style="font-size:11px;color:var(--color-text-secondary)">Okänd streaming</span>';
+
+  const progressHtml = item.type === 'series' && item.status === 'watching' ? `
+    <div class="progress-section visible">
+      <div class="progress-label">Nuvarande avsnitt</div>
+      <div class="ep-row">
+        <label>Säsong</label>
+        <input type="number" min="1" value="${item.season||1}" onchange="updateEp(${item.id},'${listKey}','season',this.value)">
+        <label>Avsnitt</label>
+        <input type="number" min="1" value="${item.episode||1}" onchange="updateEp(${item.id},'${listKey}','episode',this.value)">
+      </div>
+    </div>` : '';
+
+  const starHtml = listKey === 'done' ? `
+    <div class="rating-row" style="margin-top:8px;margin-bottom:0">
+      ${[1,2,3,4,5].map(n => `<span class="star${item.rating>=n?' lit':''}" onclick="setRating(${item.id},'${listKey}',${n})">★</span>`).join('')}
+    </div>` : '';
+
+  const noteHtml = item.note ? `<div style="font-size:12px;color:var(--color-text-secondary);margin-top:8px;font-style:italic;">"${item.note}"</div>` : '';
+
+  return `<div class="card" id="card-${item.id}">
+    <div class="card-top">
+      <div class="card-poster">${item.poster_emoji||'🎬'}</div>
+      <div class="card-info">
+        <div class="card-title">${item.title}</div>
+        <div class="card-meta">${[item.year, item.genre].filter(Boolean).join(' · ')}</div>
+        <div class="card-actions">
+          <span class="badge badge-type">${item.type==='movie'?'Film':'Serie'}</span>
+          ${statusBadge}
+          ${imdbHtml}
+        </div>
+      </div>
+    </div>
+    <div class="stream-row" style="margin-top:8px;">${streamHtml}</div>
+    ${item.description ? `<div style="font-size:12px;color:var(--color-text-secondary);margin-top:8px;line-height:1.5;">${item.description}</div>` : ''}
+    ${progressHtml}
+    ${starHtml}
+    ${noteHtml}
+    <div class="card-menu-row">
+      ${listKey !== 'done' ? `<button class="card-btn" onclick="openEdit(${item.id},'${listKey}')">Redigera</button>` : ''}
+      ${listKey !== 'done' && item.status !== 'watching' && item.type === 'series' ? `<button class="card-btn" onclick="setStatus(${item.id},'${listKey}','watching')">Börja titta</button>` : ''}
+      ${listKey !== 'done' ? `<button class="card-btn" onclick="markDone(${item.id},'${listKey}')">Markera sedd</button>` : ''}
+      ${listKey !== 'watchlist' ? `<button class="card-btn" onclick="moveToWatchlist(${item.id},'${listKey}')">→ Att se</button>` : ''}
+      <button class="card-btn danger" onclick="deleteItem(${item.id},'${listKey}')">Ta bort</button>
+    </div>
+  </div>`;
+}
+
+function setFilter(el, filter) {
+  currentFilter = filter;
+  document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+  renderList('watchlist');
+}
+
+function switchTab(tab) {
+  currentTab = tab;
+  document.querySelectorAll('.tab').forEach((t,i) => {
+    const tabs = ['watchlist','patrik','matilda','done'];
+    t.classList.toggle('active', tabs[i] === tab);
+  });
+  ['watchlist','patrik','matilda','done'].forEach(k => {
+    document.getElementById('tab-' + k).style.display = k === tab ? '' : 'none';
+  });
+}
+
+function findItem(id, listKey) {
+  return data[listKey].find(i => i.id === id);
+}
+
+function setStatus(id, listKey, status) {
+  const item = findItem(id, listKey);
+  if (item) { item.status = status; save(); render(); }
+}
+
+function updateEp(id, listKey, field, val) {
+  const item = findItem(id, listKey);
+  if (item) { item[field] = parseInt(val)||1; save(); }
+}
+
+function setRating(id, listKey, r) {
+  const item = findItem(id, listKey);
+  if (item) { item.rating = r; save(); render(); }
+}
+
+function markDone(id, listKey) {
+  const item = findItem(id, listKey);
+  if (!item) return;
+  item.status = 'done';
+  item.doneDate = new Date().toLocaleDateString('sv-SE');
+  data.done.unshift({...item});
+  data[listKey] = data[listKey].filter(i => i.id !== id);
+  save(); render();
+}
+
+function moveToWatchlist(id, listKey) {
+  const item = findItem(id, listKey);
+  if (!item) return;
+  data.watchlist.unshift({...item});
+  data[listKey] = data[listKey].filter(i => i.id !== id);
+  save(); render(); switchTab('watchlist');
+}
+
+function deleteItem(id, listKey) {
+  data[listKey] = data[listKey].filter(i => i.id !== id);
+  save(); render();
+}
+
+function openEdit(id, listKey) {
+  editingItem = id;
+  editingList = listKey;
+  const item = findItem(id, listKey);
+  if (!item) return;
+
+  const statusOptions = ['want','watching','done'].map(s => {
+    const labels = { want:'Vill se', watching:'Tittar', done:'Sett' };
+    return `<button class="status-btn${item.status===s?' sel':''}" onclick="this.parentNode.querySelectorAll('.status-btn').forEach(b=>b.classList.remove('sel'));this.classList.add('sel');document.getElementById('edit-status').value='${s}'">${labels[s]}</button>`;
+  }).join('');
+
+  document.getElementById('modal-content').innerHTML = `
+    <button class="modal-close" onclick="closeModal()">✕</button>
+    <h2>${item.title}</h2>
+    <input type="hidden" id="edit-status" value="${item.status}">
+    <div class="status-btns">${statusOptions}</div>
+    ${item.type === 'series' ? `
+    <div class="ep-row" style="margin-bottom:14px;">
+      <label>Säsong</label>
+      <input type="number" min="1" id="edit-season" value="${item.season||1}" style="width:52px;">
+      <label style="margin-left:8px;">Avsnitt</label>
+      <input type="number" min="1" id="edit-episode" value="${item.episode||1}" style="width:52px;">
+    </div>` : ''}
+    <div class="note-area">
+      <label>Anteckning</label>
+      <textarea id="edit-note" placeholder="Lägg till en kommentar...">${item.note||''}</textarea>
+    </div>
+    <button class="save-btn" onclick="saveEdit()">Spara</button>
+  `;
+  document.getElementById('modal-bg').classList.add('open');
+}
+
+function saveEdit() {
+  const item = findItem(editingItem, editingList);
+  if (!item) return;
+  item.status = document.getElementById('edit-status').value;
+  const sEl = document.getElementById('edit-season');
+  const eEl = document.getElementById('edit-episode');
+  if (sEl) item.season = parseInt(sEl.value)||1;
+  if (eEl) item.episode = parseInt(eEl.value)||1;
+  item.note = document.getElementById('edit-note').value.trim();
+  save(); render(); closeModal();
+}
+
+function closeModal() {
+  document.getElementById('modal-bg').classList.remove('open');
+}
+
+document.getElementById('modal-bg').addEventListener('click', function(e) {
+  if (e.target === this) closeModal();
+});
+</script>
